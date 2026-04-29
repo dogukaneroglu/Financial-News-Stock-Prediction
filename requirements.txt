@@ -1,0 +1,37 @@
+# Data Collection
+yfinance==0.2.38
+beautifulsoup4==4.12.3
+requests==2.31.0
+lxml==5.2.1
+
+# Data Processing
+pandas==2.2.1
+numpy==1.26.4
+ta==0.11.0
+
+# NLP
+nltk==3.8.1
+transformers==4.38.2
+torch==2.2.1
+spacy==3.7.4
+
+# Visualization
+matplotlib==3.8.3
+seaborn==0.13.2
+plotly==5.19.0
+
+# Web App
+streamlit==1.32.0
+
+# Jupyter
+jupyter==1.0.0
+ipykernel==6.29.3
+
+# Machine Learning
+scikit-learn==1.4.1.post1
+tensorflow==2.16.1
+
+# Utilities
+tqdm==4.66.2
+python-dotenv==1.0.1
+scipy==1.12.0
