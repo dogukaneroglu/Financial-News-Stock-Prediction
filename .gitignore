@@ -27,12 +27,14 @@ wheels/
 .ipynb_checkpoints
 *.ipynb_checkpoints/
 
-# Data files
+# Data & artifacts (generated locally; do not commit on every scrape)
 data/raw/*.csv
 data/raw/*.json
 data/processed/*.csv
 data/processed/*.pkl
 data/processed/*.json
+
+# Model files - large binaries
 data/models/*.h5
 data/models/*.pt
 data/models/*.pth

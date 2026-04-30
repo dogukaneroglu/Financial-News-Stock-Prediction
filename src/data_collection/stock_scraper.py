@@ -9,6 +9,13 @@ from datetime import datetime, timedelta
 import os
 from typing import List, Optional
 import time
+import requests
+
+# Configure yfinance with User-Agent to avoid rate limiting
+session = requests.Session()
+session.headers.update({
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+})
 
 
 class StockScraper:
@@ -44,6 +51,7 @@ class StockScraper:
             DataFrame with stock price data
         """
         try:
+            print(f"Fetching {ticker}... (this may take a moment)")
             stock = yf.Ticker(ticker)
             
             if start_date and end_date:
@@ -58,7 +66,7 @@ class StockScraper:
             df['Ticker'] = ticker
             df.reset_index(inplace=True)
             
-            print(f"Fetched {len(df)} days of data for {ticker}")
+            print(f"[OK] Fetched {len(df)} days of data for {ticker}")
             return df
             
         except Exception as e:
@@ -184,7 +192,7 @@ def main():
     df = scraper.fetch_multiple_stocks(
         tickers=tickers,
         period="2y",
-        delay=1.0
+        delay=5.0  # Increased delay to avoid rate limiting
     )
     
     if not df.empty:
