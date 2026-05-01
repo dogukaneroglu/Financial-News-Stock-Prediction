@@ -192,9 +192,11 @@ class FeatureEngineer:
             print("Warning: Sentiment data is empty")
             return price_df
         
-        # Ensure date columns are datetime
-        price_df['Date'] = pd.to_datetime(price_df['Date'])
-        sentiment_df['date'] = pd.to_datetime(sentiment_df['date'])
+        # Ensure date columns are timezone-safe and aligned at day granularity.
+        # Stock data may contain tz-aware timestamps (e.g., -04:00) while sentiment
+        # data is usually tz-naive dates; normalize both before merging.
+        price_df['Date'] = pd.to_datetime(price_df['Date'], utc=True).dt.tz_convert(None).dt.normalize()
+        sentiment_df['date'] = pd.to_datetime(sentiment_df['date'], utc=True).dt.tz_convert(None).dt.normalize()
         
         # Merge on ticker and date
         merged_df = price_df.merge(
