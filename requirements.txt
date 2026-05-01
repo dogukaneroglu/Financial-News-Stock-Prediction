@@ -35,3 +35,4 @@ tensorflow==2.16.1
 tqdm==4.66.2
 python-dotenv==1.0.1
 scipy==1.12.0
+optree==0.11.0
