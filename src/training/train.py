@@ -21,7 +21,8 @@ def train_baseline_model(
     data_path: str,
     model_dir: str = "data/models",
     sequence_length: int = 60,
-    epochs: int = 100
+    epochs: int = 100,
+    target_column: str = "target_change_pct"
 ):
     """
     Train baseline LSTM model (price data only).
@@ -31,6 +32,7 @@ def train_baseline_model(
         model_dir: Directory to save model
         sequence_length: Sequence length for LSTM
         epochs: Number of training epochs
+        target_column: Target variable to predict
     """
     print("\n" + "="*80)
     print("TRAINING BASELINE LSTM MODEL")
@@ -66,7 +68,7 @@ def train_baseline_model(
     )
     
     # Prepare data
-    X, y = predictor.prepare_data(df, available_features, target_column='target_price')
+    X, y = predictor.prepare_data(df, available_features, target_column=target_column)
     
     # Split and scale
     X_train, y_train, X_val, y_val, X_test, y_test = predictor.split_and_scale_data(X, y)
@@ -103,7 +105,8 @@ def train_combined_model(
     data_path: str,
     model_dir: str = "data/models",
     sequence_length: int = 60,
-    epochs: int = 100
+    epochs: int = 100,
+    target_column: str = "target_change_pct"
 ):
     """
     Train combined LSTM+Sentiment model.
@@ -113,6 +116,7 @@ def train_combined_model(
         model_dir: Directory to save model
         sequence_length: Sequence length for LSTM
         epochs: Number of training epochs
+        target_column: Target variable to predict
     """
     print("\n" + "="*80)
     print("TRAINING COMBINED LSTM+SENTIMENT MODEL")
@@ -165,7 +169,7 @@ def train_combined_model(
         df,
         price_columns=available_price_features,
         sentiment_columns=sentiment_cols,
-        target_column='target_price'
+        target_column=target_column
     )
     
     # Split and scale
@@ -251,6 +255,13 @@ def main():
         default='both',
         help='Which model(s) to train'
     )
+    parser.add_argument(
+        '--target-column',
+        type=str,
+        choices=['target_price', 'target_change', 'target_change_pct'],
+        default='target_change_pct',
+        help='Target variable to predict'
+    )
     
     args = parser.parse_args()
     
@@ -262,6 +273,7 @@ def main():
     print(f"  Model type: {args.model_type}")
     print(f"  Sequence length: {args.sequence_length}")
     print(f"  Epochs: {args.epochs}")
+    print(f"  Target column: {args.target_column}")
     print(f"  Model directory: {args.model_dir}")
     
     # Train baseline model
@@ -272,7 +284,8 @@ def main():
                     data_path=args.baseline_data,
                     model_dir=args.model_dir,
                     sequence_length=args.sequence_length,
-                    epochs=args.epochs
+                    epochs=args.epochs,
+                    target_column=args.target_column
                 )
             except Exception as e:
                 print(f"\nError training baseline model: {str(e)}")
@@ -290,7 +303,8 @@ def main():
                     data_path=args.combined_data,
                     model_dir=args.model_dir,
                     sequence_length=args.sequence_length,
-                    epochs=args.epochs
+                    epochs=args.epochs,
+                    target_column=args.target_column
                 )
             except Exception as e:
                 print(f"\nError training combined model: {str(e)}")
