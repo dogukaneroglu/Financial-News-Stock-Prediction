@@ -40,6 +40,16 @@ data/models/*.h5
 data/models/*.pt
 data/models/*.pth
 data/models/*.pkl
+data/models/*.npz
+data/models/**/*.h5
+data/models/**/*.pt
+data/models/**/*.pth
+data/models/**/*.pkl
+data/models/**/*.npz
+data/models/**/*.csv
+
+# Evaluation artifacts
+data/evaluation/*
 
 # Environment variables
 .env
