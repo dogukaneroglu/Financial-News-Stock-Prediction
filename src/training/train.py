@@ -135,14 +135,13 @@ def train_combined_model(
         'sentiment_mean', 'sentiment_std', 'sentiment_min', 'sentiment_max',
         'positive_mean', 'negative_mean', 'neutral_mean', 'news_count'
     ]
-    lagged_sentiment_cols = []
-    for lag in [1, 2, 3]:
-        lagged_sentiment_cols.extend([
-            f'sentiment_mean_lag_{lag}', f'sentiment_std_lag_{lag}',
-            f'sentiment_min_lag_{lag}', f'sentiment_max_lag_{lag}',
-            f'positive_mean_lag_{lag}', f'negative_mean_lag_{lag}',
-            f'neutral_mean_lag_{lag}', f'news_count_lag_{lag}'
-        ])
+    # Roadmap B: keep only lag_1 sentiment to reduce feature noise.
+    lagged_sentiment_cols = [
+        'sentiment_mean_lag_1', 'sentiment_std_lag_1',
+        'sentiment_min_lag_1', 'sentiment_max_lag_1',
+        'positive_mean_lag_1', 'negative_mean_lag_1',
+        'neutral_mean_lag_1', 'news_count_lag_1'
+    ]
     sentiment_cols = base_sentiment_cols + lagged_sentiment_cols
     
     missing_cols = [col for col in sentiment_cols if col not in df.columns]
