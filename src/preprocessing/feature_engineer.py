@@ -227,8 +227,31 @@ class FeatureEngineer:
         if 'date' in merged_df.columns:
             merged_df = merged_df.drop('date', axis=1)
         
+        # Add lagged sentiment features per ticker to capture delayed market reaction.
+        lag_source_cols = [
+            'sentiment_mean', 'sentiment_std', 'sentiment_min', 'sentiment_max',
+            'positive_mean', 'negative_mean', 'neutral_mean', 'news_count'
+        ]
+        merged_df = merged_df.sort_values(['Ticker', 'Date']).reset_index(drop=True)
+        for lag in [1, 2, 3]:
+            for col in lag_source_cols:
+                lag_col = f"{col}_lag_{lag}"
+                merged_df[lag_col] = merged_df.groupby('Ticker')[col].shift(lag)
+
+        # Fill lag NaNs with neutral defaults for earliest rows of each ticker.
+        for lag in [1, 2, 3]:
+            for col in lag_source_cols:
+                lag_col = f"{col}_lag_{lag}"
+                if col in ['news_count']:
+                    merged_df[lag_col] = merged_df[lag_col].fillna(0)
+                elif col in ['neutral_mean']:
+                    merged_df[lag_col] = merged_df[lag_col].fillna(1.0)
+                else:
+                    merged_df[lag_col] = merged_df[lag_col].fillna(0.0)
+
         print(f"Merged data: {len(merged_df)} rows")
         print(f"Rows with news: {merged_df['news_count'].gt(0).sum()}")
+        print("Added lagged sentiment features: lag_1, lag_2, lag_3")
         
         return merged_df
     

@@ -133,6 +133,7 @@ class CombinedPredictor:
         dropout: float = 0.2,
         learning_rate: float = 0.001,
         batch_size: int = 32,
+        weight_decay: float = 0.0,
         device: Optional[str] = None
     ):
         """
@@ -145,6 +146,7 @@ class CombinedPredictor:
             dropout: Dropout rate
             learning_rate: Learning rate for optimizer
             batch_size: Training batch size
+            weight_decay: L2 regularization strength
             device: Device to use ('cuda' or 'cpu')
         """
         self.sequence_length = sequence_length
@@ -153,6 +155,7 @@ class CombinedPredictor:
         self.dropout = dropout
         self.learning_rate = learning_rate
         self.batch_size = batch_size
+        self.weight_decay = weight_decay
         
         if device is None:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -316,7 +319,11 @@ class CombinedPredictor:
         val_loader = DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False)
         
         criterion = nn.MSELoss()
-        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        optimizer = torch.optim.Adam(
+            self.model.parameters(),
+            lr=self.learning_rate,
+            weight_decay=self.weight_decay
+        )
         
         best_val_loss = float('inf')
         patience_counter = 0
@@ -411,7 +418,8 @@ class CombinedPredictor:
                 'sequence_length': self.sequence_length,
                 'hidden_size': self.hidden_size,
                 'num_layers': self.num_layers,
-                'dropout': self.dropout
+                'dropout': self.dropout,
+                'weight_decay': self.weight_decay
             }
         }, filepath)
         
@@ -425,6 +433,7 @@ class CombinedPredictor:
         self.hidden_size = checkpoint['config']['hidden_size']
         self.num_layers = checkpoint['config']['num_layers']
         self.dropout = checkpoint['config']['dropout']
+        self.weight_decay = checkpoint['config'].get('weight_decay', 0.0)
         
         self.build_model(price_input_size, sentiment_input_size)
         self.model.load_state_dict(checkpoint['model_state_dict'])

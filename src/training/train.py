@@ -106,7 +106,9 @@ def train_combined_model(
     model_dir: str = "data/models",
     sequence_length: int = 60,
     epochs: int = 100,
-    target_column: str = "target_change_pct"
+    target_column: str = "target_change_pct",
+    dropout: float = 0.3,
+    weight_decay: float = 1e-4
 ):
     """
     Train combined LSTM+Sentiment model.
@@ -117,6 +119,8 @@ def train_combined_model(
         sequence_length: Sequence length for LSTM
         epochs: Number of training epochs
         target_column: Target variable to predict
+        dropout: Dropout rate for combined model
+        weight_decay: L2 regularization strength
     """
     print("\n" + "="*80)
     print("TRAINING COMBINED LSTM+SENTIMENT MODEL")
@@ -127,10 +131,19 @@ def train_combined_model(
     df = pd.read_csv(data_path, parse_dates=['Date'])
     
     # Check if sentiment columns exist
-    sentiment_cols = [
+    base_sentiment_cols = [
         'sentiment_mean', 'sentiment_std', 'sentiment_min', 'sentiment_max',
         'positive_mean', 'negative_mean', 'neutral_mean', 'news_count'
     ]
+    lagged_sentiment_cols = []
+    for lag in [1, 2, 3]:
+        lagged_sentiment_cols.extend([
+            f'sentiment_mean_lag_{lag}', f'sentiment_std_lag_{lag}',
+            f'sentiment_min_lag_{lag}', f'sentiment_max_lag_{lag}',
+            f'positive_mean_lag_{lag}', f'negative_mean_lag_{lag}',
+            f'neutral_mean_lag_{lag}', f'news_count_lag_{lag}'
+        ])
+    sentiment_cols = base_sentiment_cols + lagged_sentiment_cols
     
     missing_cols = [col for col in sentiment_cols if col not in df.columns]
     if missing_cols:
@@ -159,9 +172,10 @@ def train_combined_model(
         sequence_length=sequence_length,
         hidden_size=64,
         num_layers=2,
-        dropout=0.2,
+        dropout=dropout,
         learning_rate=0.001,
-        batch_size=32
+        batch_size=32,
+        weight_decay=weight_decay
     )
     
     # Prepare data
@@ -262,6 +276,18 @@ def main():
         default='target_change_pct',
         help='Target variable to predict'
     )
+    parser.add_argument(
+        '--combined-dropout',
+        type=float,
+        default=0.3,
+        help='Dropout rate for combined model regularization'
+    )
+    parser.add_argument(
+        '--combined-weight-decay',
+        type=float,
+        default=1e-4,
+        help='L2 regularization (weight decay) for combined model'
+    )
     
     args = parser.parse_args()
     
@@ -274,6 +300,8 @@ def main():
     print(f"  Sequence length: {args.sequence_length}")
     print(f"  Epochs: {args.epochs}")
     print(f"  Target column: {args.target_column}")
+    print(f"  Combined dropout: {args.combined_dropout}")
+    print(f"  Combined weight decay: {args.combined_weight_decay}")
     print(f"  Model directory: {args.model_dir}")
     
     # Train baseline model
@@ -304,7 +332,9 @@ def main():
                     model_dir=args.model_dir,
                     sequence_length=args.sequence_length,
                     epochs=args.epochs,
-                    target_column=args.target_column
+                    target_column=args.target_column,
+                    dropout=args.combined_dropout,
+                    weight_decay=args.combined_weight_decay
                 )
             except Exception as e:
                 print(f"\nError training combined model: {str(e)}")
