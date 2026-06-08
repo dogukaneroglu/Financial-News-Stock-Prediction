@@ -67,20 +67,43 @@ python src/preprocessing/feature_engineer.py
 
 **Not:** FinBERT CPU'da yavaş. GPU varsa 5 dakika, yoksa 30 dakika.
 
-### Adım 3: Model Eğitimi (30-60 dakika)
+### Adım 3: Model Eğitimi
+
+#### A) Yön sınıflandırması (güncel — ikinci gelişme raporu)
 
 ```bash
-# Her iki modeli de eğit
-python src/training/train.py --model-type both --epochs 100
+# Tüm ticker'lar birlikte (pooled)
+py -3.10 src/training/train_classification.py --epochs 35
+
+# Ticker başına ayrı model + otomatik sentiment modu seçimi
+py -3.10 src/training/train_classification_per_ticker.py --auto-sentiment --epochs 30 --threshold-objective accuracy
+```
+
+**Çıktılar:**
+- `data/models/classification/classification_metrics.csv`
+- `data/models/classification/per_ticker_metrics_auto_sentiment.csv`
+- `data/models/classification/baseline_direction_classifier.pth`
+- `data/models/classification/combined_direction_classifier.pth`
+
+**Özet sonuçlar (test seti):**
+
+| Deney | Ort. Accuracy |
+|-------|----------------|
+| Pooled baseline | ~%51,0 |
+| Pooled combined | ~%49,9 |
+| Per-ticker + auto sentiment | ~%51,6 |
+
+Ticker bazında en iyi örnek: **MSFT ~%67,7** (combined + full sentiment modu).
+
+#### B) Regresyon (ilk deneyler / isteğe bağlı)
+
+```bash
+py -3.10 src/training/train.py --model-type both --epochs 100 --target-column target_change_pct
 ```
 
 **Çıktılar:**
 - `data/models/baseline_lstm_model.pth`
 - `data/models/combined_model.pth`
-
-**Eğitim Süreleri:**
-- GPU: 15-20 dakika
-- CPU: 45-60 dakika
 
 ### Adım 4: Sonuçları İncele
 

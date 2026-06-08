@@ -5,10 +5,12 @@ A comprehensive stock price prediction system that combines **Deep Learning (LST
 ## 🎯 Project Overview
 
 This project implements an end-to-end machine learning pipeline that:
-- Collects real-time stock price data and financial news
-- Analyzes sentiment of financial news using NLP
-- Predicts future stock prices using LSTM neural networks
-- Provides an interactive web dashboard for visualization and predictions
+- Collects stock price data and financial news
+- Analyzes sentiment of financial news using **FinBERT**
+- Predicts next-day **price direction** (up/down) with LSTM classifiers
+- Compares baseline (price-only) vs combined (price + sentiment) models
+- Supports pooled and **per-ticker** training with automatic sentiment feature selection
+- Provides an interactive Streamlit dashboard for visualization
 
 ## 🌟 Features
 
@@ -23,9 +25,11 @@ This project implements an end-to-end machine learning pipeline that:
   - Daily sentiment aggregation and feature extraction
 
 - **Deep Learning Models**
-  - Baseline LSTM model (price data only)
-  - Combined LSTM+Sentiment model
-  - Technical indicators integration (RSI, MACD, Bollinger Bands)
+  - Baseline LSTM (price data only)
+  - Combined LSTM + sentiment model
+  - **Direction classification** (`target_direction`, BCE loss, threshold tuning)
+  - **Per-ticker classifiers** with `--auto-sentiment` mode selection
+  - Technical indicators (RSI, MACD, Bollinger Bands, ATR, OBV, lag features)
 
 - **Interactive Dashboard**
   - Streamlit web application
@@ -52,7 +56,9 @@ Financial News NLP and Deep Learning for Stock Prediction/
 │   │   ├── lstm_model.py         # Baseline LSTM
 │   │   └── combined_model.py     # Combined model
 │   ├── training/
-│   │   └── train.py              # Training pipeline
+│   │   ├── train.py                          # Regression training (legacy)
+│   │   ├── train_classification.py           # Pooled direction classification
+│   │   └── train_classification_per_ticker.py  # Per-ticker + auto sentiment
 │   └── evaluation/
 │       └── evaluate.py           # Model evaluation
 ├── notebooks/
@@ -125,14 +131,20 @@ python src/preprocessing/feature_engineer.py
 
 ### Step 3: Train Models
 
-**Train both baseline and combined models:**
+**Direction classification (recommended — current project focus):**
 ```bash
-python src/training/train.py --model-type both --epochs 100
+# Pooled models (all tickers together)
+python src/training/train_classification.py --epochs 35
+
+# Per-ticker models + automatic sentiment mode selection
+python src/training/train_classification_per_ticker.py --auto-sentiment --epochs 30
 ```
 
-**Train only baseline:**
+Outputs: `data/models/classification/classification_metrics.csv`, `per_ticker_metrics_auto_sentiment.csv`
+
+**Regression (optional / earlier experiments):**
 ```bash
-python src/training/train.py --model-type baseline --epochs 100
+python src/training/train.py --model-type both --epochs 100 --target-column target_change_pct
 ```
 
 ### Step 4: Explore Results
@@ -197,22 +209,23 @@ FinBERT is a BERT-based model fine-tuned on financial news:
 
 ### Evaluation Metrics
 
-- **RMSE** (Root Mean Squared Error)
-- **MAE** (Mean Absolute Error)
-- **MAPE** (Mean Absolute Percentage Error)
-- **R² Score**
-- **Directional Accuracy** (% of correct up/down predictions)
+**Classification (primary):** Accuracy, Precision, Recall, F1, ROC-AUC; decision threshold tuned on validation.
 
-## 📈 Expected Results
+**Regression (optional):** RMSE, MAE, MAPE, R², directional accuracy.
 
-Based on similar financial prediction systems:
+## 📈 Observed Results (this project)
 
-- **Baseline LSTM**: 50-55% directional accuracy
-- **Combined Model**: 55-60% directional accuracy
-- **RMSE**: 2-5% of stock price
-- **MAPE**: 3-7%
+On held-out test data (AAPL, TSLA, GOOGL, MSFT, AMZN):
 
-**Note**: Stock prediction is inherently difficult. These results demonstrate the model's ability to learn patterns, but should not be used for actual trading decisions.
+| Experiment | Avg. test accuracy |
+|------------|-------------------|
+| Pooled baseline direction | ~51.0% |
+| Pooled combined direction | ~49.9% |
+| Per-ticker + auto sentiment | ~51.6% |
+
+Best per-ticker example: **MSFT ~67.7%** test accuracy with combined features. Average performance stays near random (~50%) for daily direction — expected in efficient markets.
+
+**Note**: Results are for academic evaluation only, not trading advice.
 
 ## 🔬 Model Training Tips
 

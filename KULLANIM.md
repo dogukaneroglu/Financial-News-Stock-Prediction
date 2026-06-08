@@ -88,26 +88,29 @@ python src/preprocessing/feature_engineer.py
 
 ### 4. Model Eğitimi
 
-#### Tüm Modelleri Eğit
+#### Yön sınıflandırması (güncel yöntem)
 
 ```bash
-python src/training/train.py --model-type both --epochs 100
+# Pooled: tüm ticker'lar tek modelde
+py -3.10 src/training/train_classification.py --epochs 35
+
+# Per-ticker + otomatik sentiment modu (minimal/reduced/full)
+py -3.10 src/training/train_classification_per_ticker.py --auto-sentiment --epochs 30
 ```
 
-#### Sadece Baseline Model
+Metrik dosyaları: `data/models/classification/classification_metrics.csv`, `per_ticker_metrics_auto_sentiment.csv`
+
+#### Regresyon (ilk deneyler)
 
 ```bash
-python src/training/train.py --model-type baseline --epochs 50
+python src/training/train.py --model-type both --epochs 100 --target-column target_change_pct
 ```
 
-**Parametreler:**
+**Parametreler (regresyon):**
 - `--model-type`: baseline, combined, veya both
 - `--epochs`: Epoch sayısı (varsayılan: 100)
+- `--target-column`: target_change_pct (önerilen), target_price, target_change
 - `--sequence-length`: LSTM için geri bakış süresi (varsayılan: 60)
-
-**Eğitim Süresi:**
-- GPU ile: 10-20 dakika
-- CPU ile: 30-60 dakika
 
 ### 5. Sonuçları Görüntüleme
 
