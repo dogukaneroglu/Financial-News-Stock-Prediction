@@ -116,6 +116,7 @@ def train_baseline_classification(
     learning_rate: float,
     dropout: float,
     threshold_objective: str,
+    hidden_size: int,
 ):
     print("\n" + "=" * 80)
     print("TRAINING BASELINE DIRECTION CLASSIFIER")
@@ -165,7 +166,7 @@ def train_baseline_classification(
     X_test = scaler.transform(X_test_2d).reshape(len(X_test), n_steps, n_feat)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = LSTMModel(input_size=n_feat, hidden_size=64, num_layers=2, dropout=dropout).to(device)
+    model = LSTMModel(input_size=n_feat, hidden_size=hidden_size, num_layers=2, dropout=dropout).to(device)
 
     pos = y_train.sum()
     neg = len(y_train) - pos
@@ -248,6 +249,8 @@ def train_combined_classification(
     dropout: float,
     weight_decay: float,
     threshold_objective: str,
+    hidden_size: int,
+    sentiment_mode: str,
 ):
     print("\n" + "=" * 80)
     print("TRAINING COMBINED DIRECTION CLASSIFIER")
@@ -282,17 +285,37 @@ def train_combined_classification(
     ]
     price_cols = [c for c in price_cols if c in df.columns]
 
-    # Reduced-noise sentiment set: keep strongest signals only.
-    sentiment_cols = [
-        "sentiment_mean",
-        "news_count",
-        "positive_mean",
-        "negative_mean",
-        "sentiment_mean_lag_1",
-        "news_count_lag_1",
-        "positive_mean_lag_1",
-        "negative_mean_lag_1",
-    ]
+    if sentiment_mode == "full":
+        sentiment_cols = [
+            "sentiment_mean",
+            "sentiment_std",
+            "sentiment_min",
+            "sentiment_max",
+            "positive_mean",
+            "negative_mean",
+            "neutral_mean",
+            "news_count",
+            "sentiment_mean_lag_1",
+            "sentiment_std_lag_1",
+            "sentiment_min_lag_1",
+            "sentiment_max_lag_1",
+            "positive_mean_lag_1",
+            "negative_mean_lag_1",
+            "neutral_mean_lag_1",
+            "news_count_lag_1",
+        ]
+    else:
+        # Reduced-noise sentiment set: keep strongest signals only.
+        sentiment_cols = [
+            "sentiment_mean",
+            "news_count",
+            "positive_mean",
+            "negative_mean",
+            "sentiment_mean_lag_1",
+            "news_count_lag_1",
+            "positive_mean_lag_1",
+            "negative_mean_lag_1",
+        ]
     sentiment_cols = [c for c in sentiment_cols if c in df.columns]
 
     all_cols = price_cols + sentiment_cols + ["target_direction"]
@@ -325,7 +348,7 @@ def train_combined_classification(
     model = CombinedModel(
         price_input_size=n_feat,
         sentiment_input_size=Xs_train.shape[1],
-        hidden_size=64,
+        hidden_size=hidden_size,
         num_layers=2,
         dropout=dropout,
     ).to(device)
@@ -438,6 +461,8 @@ def main():
     parser.add_argument("--dropout", type=float, default=0.2)
     parser.add_argument("--weight-decay", type=float, default=1e-5)
     parser.add_argument("--threshold-objective", type=str, choices=["f1", "accuracy"], default="f1")
+    parser.add_argument("--hidden-size", type=int, default=64)
+    parser.add_argument("--sentiment-mode", type=str, choices=["reduced", "full"], default="reduced")
     args = parser.parse_args()
 
     print("\n" + "=" * 80)
@@ -446,7 +471,8 @@ def main():
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(
         f"Config: model_type={args.model_type}, epochs={args.epochs}, "
-        f"dropout={args.dropout}, wd={args.weight_decay}, threshold_objective={args.threshold_objective}"
+        f"dropout={args.dropout}, wd={args.weight_decay}, threshold_objective={args.threshold_objective}, "
+        f"hidden_size={args.hidden_size}, sentiment_mode={args.sentiment_mode}"
     )
 
     summary = []
@@ -459,6 +485,7 @@ def main():
             learning_rate=args.learning_rate,
             dropout=args.dropout,
             threshold_objective=args.threshold_objective,
+            hidden_size=args.hidden_size,
         )
         summary.append({"Model": "BaselineDirection", **m})
 
@@ -472,6 +499,8 @@ def main():
             dropout=args.dropout,
             weight_decay=args.weight_decay,
             threshold_objective=args.threshold_objective,
+            hidden_size=args.hidden_size,
+            sentiment_mode=args.sentiment_mode,
         )
         summary.append({"Model": "CombinedDirection", **m})
 
